@@ -79,12 +79,8 @@ All tests use **standardized scoring**: `iterations/second`
 * **C++23** compatible compiler (Clang++ ≥ v19 recommended)
 * **NASM** (latest version)
 * **Standard libraries** (libc++, libstdc++)
-
-**Optional:**
 * **LZMA development libraries** (for compression tests)
 * **OpenGL + GLFW** (for system monitor GUI)
-* **ROCm + HIP** (for future GPU tests)
-
 ## 🔧 Build Instructions
 
 ```bash
