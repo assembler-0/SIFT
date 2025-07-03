@@ -49,7 +49,7 @@ file(GLOB EXTRA_CPP_MODULES "src/*.module.cpp")
 file(GLOB EXTRA_CPP_MANAGE_MODULES "src/*.manage.cpp")
 
 # ImGui sources
-set(IMGUI_SOURCES
+set(UI_SOURCES
         include/imgui/imgui.cpp
         include/imgui/imgui_draw.cpp
         include/imgui/imgui_tables.cpp
@@ -68,7 +68,7 @@ set(COMMON_SOURCES
 # ImGui sources (separate so CLI can exclude them)
 set(COMMON_SOURCES_WITH_IMGUI
         ${COMMON_SOURCES}
-        ${IMGUI_SOURCES}
+        ${UI_SOURCES}
         ${EXTRA_CPP_MANAGE_MODULES}
 )
 
