@@ -1,4 +1,4 @@
-# SIFT (Extreme System Stability Tester) 
+# SIFT (System Intensive Function Tester) 
 
 > ⚠️ **WARNING: POTENTIAL HARDWARE DAMAGE**  
 > This tool can cause system instability, crashes, data loss, and permanent hardware damage from overheating.  

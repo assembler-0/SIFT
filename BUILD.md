@@ -19,21 +19,12 @@ make
 ```
 
 
-### 🔸 Library Build with GPU support
+### 🔸 Library Build
 
 ```bash
 mkdir buildLIB
 cd buildLIB
-cmake -DBUILD_LIBRARY=ON -DENABLE_GPU=ON ..
-make
-```
-
-### 🔸 Library Build without GPU support
-
-```bash
-mkdir buildLIB
-cd buildLIB
-cmake -DBUILD_LIBRARY=ON -DENABLE_GPU=OFF  ..
+cmake -DBUILD_LIBRARY=ON ..
 make
 ```
 
