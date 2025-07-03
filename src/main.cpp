@@ -1,6 +1,7 @@
 #include "core.hpp"
 #include "pcg_random.hpp"
 #include "logger.hpp"
+#include "config.hpp"
 #include <iostream>
 #include <random>
 #include <string>
@@ -45,6 +46,60 @@ public:
                 std::cout << "Invalid command\n";
             }
         }
+    }
+
+    void runPreset(const std::unordered_map<std::string, std::string>& config) {
+        detect_cpu_features();
+        Logger::getInstance().logSystemInfo(cpu_brand, has_avx, has_avx2, has_fma, has_aes, has_sha);
+
+        std::cout << "SIFT version " << APP_VERSION << " | CPU: " << cpu_brand << "\n";
+        std::cout << "Running preset configuration...\n\n";
+
+        auto tests = ConfigParser::getTestOrder(config);
+        if (tests.empty()) {
+            std::cout << "No tests specified in config file.\n";
+            return;
+        }
+
+        const auto start = std::chrono::high_resolution_clock::now();
+
+        for (const auto& test : tests) {
+            std::cout << "Running test: " << test << "\n";
+
+            if (test == "avx") {
+                auto iter = getConfigValue(config, "avx_iterations", 200000UL);
+                auto lower = getConfigValue(config, "avx_lower", 0.0001f);
+                auto upper = getConfigValue(config, "avx_upper", 1000000000000000.0f);
+                initAvx(iter, lower, upper);
+            }
+            else if (test == "3np1") {
+                auto iter = getConfigValue(config, "3np1_iterations", 20000000UL);
+                auto lower = getConfigValue(config, "3np1_lower", 1UL);
+                auto upper = getConfigValue(config, "3np1_upper", 1000000000000000UL);
+                init3np1(iter, lower, upper);
+            }
+            else if (test == "mem") {
+                auto iter = getConfigValue(config, "mem_iterations", 20UL);
+                initMem(iter);
+            }
+            else if (test == "branch") {
+                auto iter = getConfigValue(config, "branch_iterations", 5000000000UL);
+                auto pattern = getConfigValue(config, "branch_pattern", 4);
+                initBranch(iter, pattern);
+            }
+            else if (test == "cache") {
+                auto iter = getConfigValue(config, "cache_iterations", 5000UL);
+                initCache(iter);
+            }
+            else {
+                std::cout << "Unknown test: " << test << "\n";
+            }
+        }
+
+        const auto duration = std::chrono::high_resolution_clock::now() - start;
+        std::cout << "\nPreset complete! Total time: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(duration).count()
+                  << " seconds\n";
     }
 
 private:
@@ -378,6 +433,9 @@ private:
         std::sort(scores.begin(), scores.end());
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("AES_Encrypt", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== AESENC STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -420,6 +478,9 @@ private:
         std::sort(scores.begin(), scores.end());
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("AES_Decrypt", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== AESDEC STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -455,6 +516,9 @@ private:
         std::sort(scores.begin(), scores.end());
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("Disk_Write", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== DISK STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -490,6 +554,9 @@ private:
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("SHA256_Hash", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== SHA STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -543,6 +610,9 @@ private:
         const double avg = total / scores.size();
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
+        
+        // Log results
+        Logger::getInstance().logTestResult("CPU_Render", scores, avg, median, cpu_brand);
         
         std::cout << "\n========== RENDER SCORE ==========\n";
         for (size_t i = 0; i < scores.size(); ++i) {
@@ -1044,9 +1114,34 @@ private:
         
         return results;
     }
+    template<typename T>
+    T getConfigValue(const std::unordered_map<std::string, std::string>& config, const std::string& key, T default_value) {
+        auto it = config.find(key);
+        if (it == config.end()) return default_value;
+        
+        std::stringstream ss(it->second);
+        T value;
+        ss >> value;
+        return ss.fail() ? default_value : value;
+    }
 };
 
-int main() {
-    sift().init();
+int main(int argc, char* argv[]) {
+    if (argc == 2) {
+        // Config file mode
+        std::string config_file = argv[1];
+        std::unordered_map<std::string, std::string> config;
+        
+        if (!ConfigParser::loadConfig(config_file, config)) {
+            std::cerr << "Error: Could not load config file: " << config_file << std::endl;
+            return 1;
+        }
+        
+        std::cout << "Loading preset: " << config_file << std::endl;
+        sift().runPreset(config);
+    } else {
+        // Interactive mode
+        sift().init();
+    }
     return 0;
 }
