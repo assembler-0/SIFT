@@ -14,18 +14,19 @@
 
 ## 💥 Features
 
-| Module | Target | Description |
-|--------|--------|-------------|
-| **Integer Arithmetic** (`3np1.asm`/`primes.asm`) | ALUs, Branch Prediction | Collatz conjecture & prime factorization |
-| **AES Encryption/Decryption** (`aesENC.asm`/`aesDEC.asm`)| Crypto Accelerators | AES-256 XTS mode with key expansion |
-| **AVX/FMA Floating-Point** (`avx.asm`) | Vector Units | 12-wave FPU torture with dependency chains |
-| **Branch Prediction** (`branch.asm`) | Branch Predictors | Real-world patterns: gaming, database, compiler |
-| **CPU Rendering** (`render.asm`) | Mathematical Units |  polynomial & trigonometric  |
-| **Disk I/O Stress** (`diskWrite.asm`) | Storage Subsystem | Multi-pattern 16GB write cycles |
-| **Memory Flooding** (`flood.asm`) | DRAM & Cache Integrity | L1/L2/L3 cache hierarchy + rowhammer attacks |
-| **LZMA Compression** (`lzma.module.cpp`) | CPU Compression | Multi-threaded LZMA level 9 + DEFLATE |
-| **SHA-256 Hashing** (`sha256.asm`) | Crypto Extensions | SHA-NI instruction with multiple rounds |
-| **System Monitor** (`systemMonitor.manage.cpp`) | Real-time Monitoring | ImGui interface with thermal detection |
+| Module                                                    | Target                  | Description                                     |
+|-----------------------------------------------------------|-------------------------|-------------------------------------------------|
+| **Integer Arithmetic** (`3np1.asm`/`primes.asm`)          | ALUs, Branch Prediction | Collatz conjecture & prime factorization        |
+| **AES Encryption/Decryption** (`aesENC.asm`/`aesDEC.asm`) | Crypto Accelerators     | AES-256 XTS mode with key expansion             |
+| **AVX/FMA Floating-Point** (`avx.asm`)                    | Vector Units            | 12-wave FPU torture with dependency chains      |
+| **Branch Prediction** (`branch.asm`)                      | Branch Predictors       | Real-world patterns: gaming, database, compiler |
+| **Cache test** (`cache.asm`)                              | L1/L2/L3 Memory Latency | Real-world operations                           |
+| **CPU Rendering** (`render.asm`)                          | Mathematical Units      | polynomial & trigonometric                      |
+| **Disk I/O Stress** (`diskWrite.asm`)                     | Storage Subsystem       | Multi-pattern 16GB write cycles                 |
+| **Memory Flooding** (`flood.asm`)                         | DRAM & Cache Integrity  | L1/L2/L3 cache hierarchy + rowhammer attacks    |
+| **LZMA Compression** (`lzma.module.cpp`)                  | CPU Compression         | Multi-threaded LZMA level 9 + DEFLATE           |
+| **SHA-256 Hashing** (`sha256.asm`)                        | Crypto Extensions       | SHA-NI instruction with multiple rounds         |
+| **System Monitor** (`systemMonitor.manage.cpp`)           | Real-time Monitoring    | ImGui interface with thermal detection          |
 
 ## 🎯 Test Categories
 
@@ -50,11 +51,11 @@
 
 ## 🚀 Versions
 
-| Version | Description                                       |
-|---------|---------------------------------------------------|
-| `SIFT` (Full) ![Full Version](https://img.shields.io/badge/Version-Full-red) | Complete system torture with real-time monitoring |
-| `SIFTCLI` ![CLI Version](https://img.shields.io/badge/Version-CLI-orange) | Command-line only (deprecated)                    |
-| `SIFTLIB` ![Library Version](https://img.shields.io/badge/Version-Library-blue) | Static library for integration                    |
+| Version                                                                              | Description                                          |
+|--------------------------------------------------------------------------------------|------------------------------------------------------|
+| `SIFT` (Full) ![Full Version](https://img.shields.io/badge/Version-Full-red)         | Complete system torture with real-time monitoring    |
+| `SIFTCLI` ![CLI Version](https://img.shields.io/badge/Version-CLI-orange)            | Command-line only (deprecated)                       |
+| `SIFTLIB` ![Library Version](https://img.shields.io/badge/Version-Library-blue)      | Static library for integration                       |
 
 ## 📊 Scoring System
 
@@ -65,12 +66,12 @@ All tests use **standardized scoring**: `iterations/second`
 
 ## 📚 Documentation
 
-| Guide | Description |
-|-------|-------------|
-| **[📖 USAGE.md](USAGE.md)** | Complete user guide - how to run tests and interpret results |
-| **[🔧 BUILD.md](BUILD.md)** | Build instructions for all platforms and configurations |
-| **[⚙️ PRESETS.md](PRESETS.md)** | Configuration file guide - create custom test presets |
-| **[🔬 TECHNICAL.md](TECHNICAL.md)** | Technical documentation - architecture and implementation details |
+| Guide                                | Description                                                       |
+|--------------------------------------|-------------------------------------------------------------------|
+| **[📖 USAGE.md](USAGE.md)**          | Complete user guide - how to run tests and interpret results      |
+| **[🔧 BUILD.md](BUILD.md)**          | Build instructions for all platforms and configurations           |
+| **[⚙️ PRESETS.md](PRESETS.md)**      | Configuration file guide - create custom test presets             |
+| **[🔬 TECHNICAL.md](TECHNICAL.md)**  | Technical documentation - architecture and implementation details |
 
 ## 🚀 Quick Start
 
