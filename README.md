@@ -63,31 +63,35 @@ All tests use **standardized scoring**: `iterations/second`
 - Consistent across all test modules
 - Real-time monitoring with thermal throttling detection
 
-## 📦 Prerequisites
+## 📚 Documentation
 
-**Required:**
-* **CMake** ≥ 4.0
-* **C++23** compatible compiler (Clang++ ≥ v19 recommended)
-* **NASM** (latest version)
-* **Standard libraries** (libc++, libstdc++)
-* **LZMA development libraries** (for compression tests)
-* **OpenGL + GLFW** (for system monitor GUI)
-## 🔧 Build Instructions
+| Guide | Description |
+|-------|-------------|
+| **[📖 USAGE.md](USAGE.md)** | Complete user guide - how to run tests and interpret results |
+| **[🔧 BUILD.md](BUILD.md)** | Build instructions for all platforms and configurations |
+| **[⚙️ PRESETS.md](PRESETS.md)** | Configuration file guide - create custom test presets |
+| **[🔬 TECHNICAL.md](TECHNICAL.md)** | Technical documentation - architecture and implementation details |
+
+## 🚀 Quick Start
 
 ```bash
-# Standard build
+# 1. Build SIFT
+git clone <repository>
+cd SIFT
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
 
-# CLI-only build (no ImGui)
-cmake -DBUILD_CLI=ON ..
-make -j$(nproc)
+# 2. Run interactive mode
+./sift
 
-# Library build
-cmake -DBUILD_LIBRARY=ON ..
-make -j$(nproc)
+# 3. Or run a preset
+./sift gaming.cfg
 ```
+
+**📖 New to SIFT?** Start with **[USAGE.md](USAGE.md)** for complete instructions.
+
+**🔧 Build issues?** Check **[BUILD.md](BUILD.md)** for platform-specific help.
 
 ## 🎮 Usage Examples
 
@@ -113,7 +117,7 @@ Intensity (1 = default): 2
 
 ## 🏆 Honorable Mentions
 
-Special thanks to the original project, ESST, which inspired the structure and intensity of this enhanced version.
+Special thanks to the original project, ESST, which inspired the structure and intensity of this enhanced version. (I just make a fork because esst was not portable due to ROCm)
 
 ## ⚡ Performance Notes
 
