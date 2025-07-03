@@ -16,24 +16,24 @@
 
 | Module | Target | Description |
 |--------|--------|-------------|
-| **Integer Arithmetic** (`3np1.asm`/`primes.asm`) | ALUs, Branch Prediction | Collatz conjecture & prime factorization torture |
+| **Integer Arithmetic** (`3np1.asm`/`primes.asm`) | ALUs, Branch Prediction | Collatz conjecture & prime factorization |
 | **AES Encryption/Decryption** (`aesENC.asm`/`aesDEC.asm`)| Crypto Accelerators | AES-256 XTS mode with key expansion |
 | **AVX/FMA Floating-Point** (`avx.asm`) | Vector Units | 12-wave FPU torture with dependency chains |
 | **Branch Prediction** (`branch.asm`) | Branch Predictors | Real-world patterns: gaming, database, compiler |
-| **CPU Rendering** (`render.asm`) | Mathematical Units | Death mode polynomial & trigonometric torture |
+| **CPU Rendering** (`render.asm`) | Mathematical Units |  polynomial & trigonometric  |
 | **Disk I/O Stress** (`diskWrite.asm`) | Storage Subsystem | Multi-pattern 16GB write cycles |
 | **Memory Flooding** (`flood.asm`) | DRAM & Cache Integrity | L1/L2/L3 cache hierarchy + rowhammer attacks |
 | **LZMA Compression** (`lzma.module.cpp`) | CPU Compression | Multi-threaded LZMA level 9 + DEFLATE |
-| **SHA-256 Hashing** (`sha256.asm`) | Crypto Extensions | SHA-NI instruction torture with multiple rounds |
-| **System Monitor** (`systemMonitor.manage.cpp`) | Real-time Monitoring | Cyberpunk-themed ImGui interface with thermal detection |
+| **SHA-256 Hashing** (`sha256.asm`) | Crypto Extensions | SHA-NI instruction with multiple rounds |
+| **System Monitor** (`systemMonitor.manage.cpp`) | Real-time Monitoring | ImGui interface with thermal detection |
 
 ## 🎯 Test Categories
 
 ### **🔥 Tests** (Maximum CPU Saturation)
 - **`avx`** - AVX/FMA vector unit destruction
-- **`render`** - Mathematical death mode (10,000 ops/iteration)
+- **`render`** - Mathematical mode
 - **`mem`** - Memory controller + rowhammer attacks
-- **`full`** - Nuclear option (all tests combined)
+- **`full`** - All tests combined
 
 ### **🎮 Real-World Tests** (Application Performance Prediction)
 - **`branch`** - Branch prediction with realistic patterns
@@ -62,15 +62,6 @@ All tests use **standardized scoring**: `iterations/second`
 - Higher scores = better performance
 - Consistent across all test modules
 - Real-time monitoring with thermal throttling detection
-
-## 🎨 System Monitor Features
-
-- **Cyberpunk neon theme** with real-time updates
-- **CPU temperature & frequency monitoring**
-- **Memory usage tracking** (GB + percentage)
-- **Thermal throttling detection** with warnings
-- **Performance graphs** with 120-sample history
-- **60 FPS smooth interface**
 
 ## 📦 Prerequisites
 
@@ -122,7 +113,7 @@ Intensity (1 = default): 2
 
 ## 🏆 Honorable Mentions
 
-Special thanks to the original project, ESST, which inspired the structure and documentation style of this enhanced version.
+Special thanks to the original project, ESST, which inspired the structure and intensity of this enhanced version.
 
 ## ⚡ Performance Notes
 
