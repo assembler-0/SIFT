@@ -22,11 +22,11 @@ aes128EncryptBlock:
     ret
 
 ; Optimized AES-256 key expansion
-; rdi = output buffer (240 bytes for 15 round keys), rdx = 32-byte master key
+; rdi = output buffer (240 bytes for 15 round keys), rsi = 32-byte master key
 aes256Keygen:
     ; Load master key
-    vmovdqu xmm0, [rdx]      ; First 16 bytes
-    vmovdqu xmm1, [rdx+16]   ; Second 16 bytes
+    vmovdqu xmm0, [rsi]      ; First 16 bytes
+    vmovdqu xmm1, [rsi+16]   ; Second 16 bytes
 
     ; Store initial round keys
     vmovdqu [rdi], xmm0      ; Round 0 key

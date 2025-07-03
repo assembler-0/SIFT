@@ -922,7 +922,7 @@ private:
         for (auto& v : key) v = dist(gen);
         for (long i = 0; i < iterations; i++){
             // Key expansion (stress FPU)
-            aes256Keygen(expanded_key);
+            aes256Keygen(expanded_key, key);
             // Encrypt individual blocks (stress latency)
             for (size_t i = 0; i < BLOCKS; i++) {
                 aes128EncryptBlock(ciphertext, plaintext, key);
@@ -954,7 +954,7 @@ private:
 
         for (long i = 0; i < iterations; i++){
             // Key expansion (stress FPU)
-            aes256Keygen(expanded_key);
+            aes256Keygen(expanded_key, key);
             // Decrypt individual blocks (stress latency)
             for (size_t i = 0; i < BLOCKS; i++) {
                 aes128DecryptBlock(plaintext, ciphertext, key);
