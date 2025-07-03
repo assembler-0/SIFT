@@ -1,7 +1,7 @@
-/*
+/*Added cache testing ang logging
  * PCG Random Number Generation for C++
  *
- * Copyright 2014 Melissa O'Neill <oneill@pcg-random.org>
+ * Copyright 2014 Melissa O'Neill <oneill@pcAdded cache testing ang loggingg-random.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
