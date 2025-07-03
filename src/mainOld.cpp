@@ -8,7 +8,6 @@
 #include <thread>
 #include <chrono>
 #include <vector>
-#include <immintrin.h>
 #include <cpuid.h>
 #include <sched.h>
 #include <sys/mman.h>
@@ -138,7 +137,7 @@ private:
                   << " ms\n";
     }
 
-    void initMem() {
+    void initMem() const {
         char status;
         std::cout << "ONE TIME WARNING, THIS TEST CONTAINS ROWHAMMER ATTACK, PROCEED? (yY/nN): ";
         std::cin >> status;
@@ -166,7 +165,7 @@ private:
                   << " ms\n";
     }
 
-    void initAESENC() {
+    void initAESENC() const {
         unsigned long iterations = 0;
         unsigned int block_size = 0;
         std::cout << "Iterations?: ";

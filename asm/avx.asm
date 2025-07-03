@@ -27,7 +27,7 @@ avx:
         vbroadcastss ymm15, dword [rdi+48]
         
         ; MASSIVE ITERATION COUNT - CPU will suffer
-        mov rax, 8192
+        mov rax, 128
         
 loop:
         ; === WAVE 1: Maximum FMA dependency hell ===

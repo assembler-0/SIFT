@@ -23,6 +23,9 @@ public:
         std::cout << "SIFT version " << APP_VERSION << " | CPU: " << cpu_brand << "\n";
         std::cout << "Features: AVX" << (has_avx ? "+" : "-")
                   << " | AVX2" << (has_avx2 ? "+" : "-")
+                  << " | AES" << (has_aes ? "+" : "-")
+                  << " | SHA" << (has_sha ? "+" : "-")
+                  << " | AVX2" << (has_avx2 ? "+" : "-")
                   << " | FMA" << (has_fma ? "+" : "-") << "\n";
 
         while (running) {
@@ -42,10 +45,10 @@ private:
     bool running = true;
     std::string op_mode;
     std::string cpu_brand;
-    bool has_avx = false, has_avx2 = false, has_fma = false;
+    bool has_avx = false, has_avx2 = false, has_fma = false, has_aes = false, has_sha = false;
     const unsigned int num_threads = std::thread::hardware_concurrency();
 
-    static constexpr auto APP_VERSION = "0.8.5";
+    static constexpr auto APP_VERSION = "0.9.0";
     static constexpr int AVX_BUFFER_SIZE = 64; // 256 bytes (L1 cache line optimized)
     static constexpr int COLLATZ_BATCH_SIZE = 10000000;
 
@@ -61,7 +64,9 @@ private:
         {"sha", [this]() { initSHA256(); }},
         {"lzma", [this]() { initLZMA(); }},
         {"aesenc", [this]() { initAESENC(); }},
-        {"aesdec", [this]() { initAESDEC(); }}
+        {"aesdec", [this]() { initAESDEC(); }},
+        {"render", [this]() { initRender(); }},
+        {"branch", [this]() { initBranch(); }}
     };
 
     void detect_cpu_features() {
@@ -80,6 +85,12 @@ private:
         memcpy(brand+32, &eax, 4); memcpy(brand+36, &ebx, 4);
         memcpy(brand+40, &ecx, 4); memcpy(brand+44, &edx, 4);
 
+        __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+        has_aes = ecx & bit_AES;        // Missing AES-NI detection
+        has_sha = false;                // Add SHA-NI detection
+
+        __get_cpuid(7, &eax, &ebx, &ecx, &edx);
+        has_sha = ebx & (1 << 29);      // SHA-NI support
         cpu_brand = brand;
 
         __get_cpuid(1, &eax, &ebx, &ecx, &edx);
@@ -102,6 +113,8 @@ private:
                   << "sha   - SHA_NI stressing\n"
                   << "disk   - Disk stressing\n"
                   << "lzma   - CPU compression and decompression using LZMA\n"
+                  << "render - BRUTAL CPU Ray-tracing (Cinebench killer)\n"
+                  << "branch - Branch Prediction (Real-world patterns)\n"
                   << "gpu   - GPU stressing with HIP\n"
                   << "full  - Combined Full System Stress\n"
                   << "exit  - Exit Program\n\n";
@@ -127,7 +140,6 @@ private:
         spawn_system_monitor();
         const int duration = duration_o.value();
         if (duration_o.value() == 0) return;
-        spawn_system_monitor();
         startLZMA(duration);
         stop_system_monitor();
     }
@@ -469,19 +481,119 @@ private:
         
     }
 
+    void initRender(std::optional<int> resolution_o = std::nullopt, std::optional<int> samples_o = std::nullopt) const {
+        if (!resolution_o.has_value()) {
+            std::cout << "Resolution (1=720p, 2=1080p, 3=4K): ";
+            if (!(std::cin >> resolution_o.emplace())) return;
+        }
+        if (!samples_o.has_value()) {
+            std::cout << "Samples: ";
+            if (!(std::cin >> samples_o.emplace())) return;
+        }
+        int width = 0, height = 0;
+
+        switch (resolution_o.value()) {
+            case 1: width = 1280; height = 720; break;
+            case 2: width = 1920; height = 1080; break;
+            case 3: width = 3840; height = 2160; break;
+            default: break;
+        }
+        
+        std::cout << "\nCPU TRACER TEST\n";
+        std::cout << "Resolution: " << width << "x" << height << "\n";
+        std::cout << "Samples per pixel: " << (64 * samples_o.value()) << "\n";
+        
+        spawn_system_monitor();
+        
+        std::vector<std::thread> threads;
+        threads.reserve(num_threads);
+        std::vector<double> scores(num_threads);
+        
+        for (unsigned i = 0; i < num_threads; ++i) {
+            threads.emplace_back([=, &scores]() {
+                scores[i] = renderWorker(width, height, samples_o.value(), i);
+            });
+        }
+        
+        for (auto& t : threads) t.join();
+        
+        const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
+        const double avg = total / scores.size();
+        std::ranges::sort(scores);
+        const double median = scores[scores.size() / 2];
+        
+        std::cout << "\n========== RENDER SCORE ==========\n";
+        for (size_t i = 0; i < scores.size(); ++i) {
+            std::cout << "Thread " << i << ": " << formatIPS(scores[i]) << "\n";
+        }
+        std::cout << "-------------------------------\n";
+        std::cout << "Avg:    " << formatIPS(avg) << "\n";
+        std::cout << "Median: " << formatIPS(median) << "\n";
+        std::cout << "===================================\n";
+        
+        stop_system_monitor();
+    }
+
+    void initBranch(std::optional<unsigned long> iterations_o = std::nullopt, std::optional<int> pattern_o = std::nullopt) {
+        if (!iterations_o.has_value()) {
+            std::cout << "Iterations?: ";
+            if (!(std::cin >> iterations_o.emplace())) return;
+        }
+        if (!pattern_o.has_value()) {
+            std::cout << "Pattern (1=Gaming, 2=Database, 3=Compiler, 4=Mixed): ";
+            if (!(std::cin >> pattern_o.emplace())) return;
+        }
+        
+        const char* pattern_names[] = {"", "Gaming AI", "Database Queries", "Compiler Parsing", "Mixed Workload"};
+        std::cout << "\n🎯 BRANCH PREDICTION : " << pattern_names[pattern_o.value()] << "\n\n";
+        
+        spawn_system_monitor();
+        
+        std::vector<std::thread> threads;
+        threads.reserve(num_threads);
+        std::vector<double> scores(num_threads);
+        
+        for (unsigned i = 0; i < num_threads; ++i) {
+            threads.emplace_back([=, &scores]() {
+                scores[i] = branchWorker(iterations_o.value(), pattern_o.value(), i);
+            });
+        }
+        
+        for (auto& t : threads) t.join();
+        
+        const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
+        const double avg = total / scores.size();
+        std::ranges::sort(scores);
+        const double median = scores[scores.size() / 2];
+        
+        std::cout << "\n==== BRANCH PREDICTION SCORE ====\n";
+        for (size_t i = 0; i < scores.size(); ++i) {
+            std::cout << "Thread " << i << ": " << formatIPS(scores[i]) << "\n";
+        }
+        std::cout << "-------------------------------\n";
+        std::cout << "Avg:    " << formatIPS(avg) << "\n";
+        std::cout << "Median: " << formatIPS(median) << "\n";
+        std::cout << "===================================\n";
+        
+        stop_system_monitor();
+    }
+
     void nuclearOption() {
         unsigned long intensity = 0;
         std::cout << "Intensity (1 = default): ";
         std::cin >> intensity;
         std::cout << "Launching full stress test...\n";
-        unsigned long nuke_iterations_avx = 2000000 * intensity;
+        unsigned long nuke_iterations_avx = 200000 * intensity;
         unsigned long nuke_iterations_3np1 = 20000000 * intensity;
-        unsigned long nuke_iterations_primes = 1 * intensity;
+        unsigned long nuke_iterations_primes = 3 * intensity;
         unsigned long nuke_iterations_aes = 20 * intensity;
         unsigned long nuke_iterations_disk = 20 * intensity;
         unsigned long nuke_iterations_mem = 20 * intensity;
         unsigned long nuke_iterations_sha = 100000000 * intensity;
         unsigned long nuke_duration_lzma = 60 * intensity;
+        unsigned long nuke_resolution_render = 3;
+        unsigned long nuke_samples_render = 5 * intensity;
+        unsigned long nuke_iterations_branch = 5000000000 * intensity;
         constexpr unsigned long lower_avx = 0.0001, upper_avx = 1000000000000000;
         constexpr unsigned long lower = 1, upper = 1000000000000000;
         constexpr int block_size = 24;
@@ -496,6 +608,11 @@ private:
         initDiskWrite(nuke_iterations_disk);
         initSHA256(nuke_iterations_sha);
         initLZMA(nuke_duration_lzma);
+        initRender(nuke_resolution_render, nuke_samples_render);
+        initBranch(nuke_iterations_branch, 1);
+        initBranch(nuke_iterations_branch, 2);
+        initBranch(nuke_iterations_branch, 3);
+        initBranch(nuke_iterations_branch, 4);
         const auto duration = std::chrono::high_resolution_clock::now() - start;
         std::cout << "Full test complete! Time: "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
@@ -506,7 +623,8 @@ private:
     static void pinThread(int core) {
         cpu_set_t cpuset;
         CPU_ZERO(&cpuset);
-        CPU_SET(core % std::thread::hardware_concurrency(), &cpuset);
+        int target_core = core % std::thread::hardware_concurrency();
+        CPU_SET(target_core, &cpuset);
         pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     }
     static void* allocate_huge_buffer(size_t size) {
@@ -627,29 +745,23 @@ private:
 
     static double collatzWorker(unsigned long iterations, unsigned long lower, unsigned long upper, int tid) {
         pinThread(tid);
-        const long instruction_per_threads = 23 * iterations;
         pcg32 gen(42u + tid, 54u + tid);
         std::uniform_int_distribution<unsigned long> dist(lower, upper);
 
-        unsigned long total_steps = 0;
         const auto start = std::chrono::high_resolution_clock::now();
 
         for (unsigned long i = 0; i < iterations; ) {
             const unsigned long batch = std::min(static_cast<unsigned long>(COLLATZ_BATCH_SIZE), iterations - i);
-            unsigned long batch_steps = 0;
 
             for (unsigned long j = 0; j < batch; ++j) {
                 unsigned long steps = 0;
                 p3np1E(dist(gen), &steps);
-                batch_steps += steps;
             }
-
-            total_steps += batch_steps;
             i += batch;
         }
         const auto end = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> elapsed = end - start;
-        return instruction_per_threads / elapsed.count();  // it/s
+        return iterations / elapsed.count();  // Standard: iterations/second
     }
 
     static double primesWorker(unsigned long iterations, unsigned long lower, unsigned long upper, int tid) {
@@ -680,7 +792,6 @@ private:
 
     static double avxWorker(const unsigned long iterations, const float lower, const float upper, int tid) {
         pinThread(tid);
-        const long instruction_per_threads =  999448 * iterations;
         pcg32 gen(42u + tid, 54u + tid);
         std::uniform_real_distribution<float> dist(lower, upper);
 
@@ -698,11 +809,10 @@ private:
             for (int offset = 0; offset < AVX_BUFFER_SIZE; offset += 8) {
                 avx(n1+offset, n2+offset, n3+offset);
             }
-
         }
         const auto end = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> elapsed = end - start;
-        return instruction_per_threads / elapsed.count();
+        return iterations / elapsed.count();  // Standard: iterations/second
     }
     static double diskWriteWorker(unsigned long iterations, int tid){
         pinThread(tid);
@@ -713,7 +823,53 @@ private:
         }
         const auto end = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> elapsed = end - start;
-        std::cout << iterations / elapsed.count() << "\n";
+        return iterations / elapsed.count();  // Standard: iterations/second
+    }
+
+    static double renderWorker(int width, int height, int sample_multiplier, int tid) {
+        pinThread(tid);
+        const auto start = std::chrono::high_resolution_clock::now();
+        
+        // Create scene data (16 spheres)
+        alignas(16) float scene[64]; // 16 spheres * 4 floats (x,y,z,radius)
+        pcg32 gen(42u + tid, 54u + tid);
+        std::uniform_real_distribution<float> pos_dist(-10.0f, 10.0f);
+        std::uniform_real_distribution<float> rad_dist(0.5f, 2.0f);
+        
+        for (int i = 0; i < 16; ++i) {
+            scene[i*4 + 0] = pos_dist(gen);     // x
+            scene[i*4 + 1] = pos_dist(gen);     // y  
+            scene[i*4 + 2] = pos_dist(gen);     // z
+            scene[i*4 + 3] = rad_dist(gen);     // radius
+        }
+        
+        // Calculate pixels per thread
+        int total_pixels = width * height;
+        int pixels_per_thread = total_pixels / std::thread::hardware_concurrency();
+        int start_pixel = tid * pixels_per_thread;
+        int end_pixel = (tid == std::thread::hardware_concurrency() - 1) ? 
+                       total_pixels : start_pixel + pixels_per_thread;
+        
+        alignas(16) float pixel_output;
+        long pixels_rendered = 0;
+
+        double total_iterations = (end_pixel - start_pixel) * sample_multiplier;
+        renderPixel(total_iterations, tid, &pixel_output);
+        pixels_rendered = total_iterations;
+        
+        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> elapsed = end - start;
+        return pixels_rendered / elapsed.count(); // Pixels per second
+    }
+
+    static double branchWorker(unsigned long iterations, int pattern_type, int tid) {
+        pinThread(tid);
+        const auto start = std::chrono::high_resolution_clock::now();
+
+        branchTorture(iterations, pattern_type);
+        
+        const auto end = std::chrono::high_resolution_clock::now();
+        const std::chrono::duration<double> elapsed = end - start;
         return iterations / elapsed.count();
     }
 };
