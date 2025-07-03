@@ -29,7 +29,7 @@
 
 ## 🎯 Test Categories
 
-### **🔥 Torture Tests** (Maximum CPU Punishment)
+### **🔥 Tests** (Maximum CPU Saturation)
 - **`avx`** - AVX/FMA vector unit destruction
 - **`render`** - Mathematical death mode (10,000 ops/iteration)
 - **`mem`** - Memory controller + rowhammer attacks
