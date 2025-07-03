@@ -2,6 +2,8 @@
 #include "pcg_random.hpp"
 #include "logger.hpp"
 #include "config.hpp"
+#include "menu.hpp"
+#include "spinner.hpp"
 #include <iostream>
 #include <random>
 #include <string>
@@ -23,27 +25,33 @@ class sift {
 public:
     void init() {
         detect_cpu_features();
-        
-        // Log session start
         Logger::getInstance().logSystemInfo(cpu_brand, has_avx, has_avx2, has_fma, has_aes, has_sha);
         
-        std::cout << "SIFT version " << APP_VERSION << " | CPU: " << cpu_brand << "\n";
-        std::cout << "Features: AVX" << (has_avx ? "+" : "-")
-                  << " | AVX2" << (has_avx2 ? "+" : "-")
-                  << " | AES" << (has_aes ? "+" : "-")
-                  << " | SHA" << (has_sha ? "+" : "-")
-                  << " | AVX2" << (has_avx2 ? "+" : "-")
-                  << " | FMA" << (has_fma ? "+" : "-") << "\n";
-
         while (running) {
-            std::cout << "[SIFT] >> ";
-            if (!std::getline(std::cin, op_mode)) break;
-
-            if (auto it = command_map.find(op_mode); it != command_map.end()) {
-                it->second();
-            }
-            else if (!op_mode.empty()) {
-                std::cout << "Invalid command\n";
+            MenuSystem::showMainMenu(cpu_brand, has_avx, has_avx2, has_fma, has_aes, has_sha);
+            char choice = MenuSystem::getMenuChoice();
+            
+            switch (choice) {
+                case '1': initAvx(); break;
+                case '2': initRender(); break;
+                case '3': initMem(); break;
+                case '4': nuclearOption(); break;
+                case '5': initBranch(); break;
+                case '6': initCache(); break;
+                case '7': init3np1(); break;
+                case '8': initPrimes(); break;
+                case '9': initAESENC(); break;
+                case 'A': initAESDEC(); break;
+                case 'B': initSHA256(); break;
+                case 'C': initDiskWrite(); break;
+                case 'D': initLZMA(); break;
+                case 'R': showRecommendations(); break;
+                case 'Q': running = false; break;
+                default:
+                    std::cout << "\nInvalid option! Press Enter to continue...";
+                    std::cin.ignore();
+                    std::cin.get();
+                    break;
             }
         }
     }
@@ -226,17 +234,22 @@ private:
         const unsigned long lower = lower_o.value();
         const unsigned long upper = upper_o.value();
         if (iterations_o.value() == 0) return;
+        Spinner spinner("🔥 Running 3n+1 Collatz test...");
+        // Suppress GUI warnings
+        freopen("/dev/null", "w", stderr);
         spawn_system_monitor();
+        freopen("/dev/tty", "w", stderr);
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
-
+        
         for (int i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
                 scores[i] = collatzWorker(iterations, lower, upper, i);
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -246,15 +259,19 @@ private:
         // Log results
         Logger::getInstance().logTestResult("3n+1_Collatz", scores, avg, median, cpu_brand);
         
-        std::cout << "\n====== 3n+1 STRESS SCORE ======\n";
+        system("clear");
+        std::cout << "\n🏆 ====== 3n+1 STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
-                      << formatIPS(scores[i]) << "\n";
+                      << formatIPS(scores[i]) << " 🔥\n";
         }
         std::cout << "-------------------------------\n";
-        std::cout << "Avg:    " << formatIPS(avg) << "\n";
-        std::cout << "Median: " << formatIPS(median) << "\n";
+        std::cout << "Avg:    " << formatIPS(avg) << " ⚡\n";
+        std::cout << "Median: " << formatIPS(median) << " ⚡\n";
         std::cout << "================================\n";
+        std::cout << "\nPress Enter to continue...";
+        std::cin.ignore();
+        std::cin.get();
         stop_system_monitor();
 
     }
@@ -276,6 +293,7 @@ private:
         const unsigned long lower = lower_o.value();
         const unsigned long upper = upper_o.value();
         if (iterations_o.value() == 0) return;
+        Spinner spinner("🔢 Running prime factorization ...");
         spawn_system_monitor();
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
@@ -287,6 +305,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -329,6 +348,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("⚡ Running AVX/FMA vector...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -336,6 +356,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -376,6 +397,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("💥 Running memory stress + rowhammer attack...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -383,6 +405,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -420,6 +443,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("🔒 Running AES encryption...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -427,6 +451,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -465,6 +490,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("🔓 Running AES decryption ...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -472,6 +498,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -503,6 +530,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("💾 Running disk write...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -510,6 +538,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -541,6 +570,7 @@ private:
         std::vector<std::thread> threads;
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
+        Spinner spinner("🔐 Running SHA-256 hashing...");
         spawn_system_monitor();
         for (unsigned i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
@@ -548,6 +578,7 @@ private:
             });
         }
         for (auto& t : threads) t.join();
+        spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
@@ -592,6 +623,7 @@ private:
         std::cout << "Resolution: " << width << "x" << height << "\n";
         std::cout << "Samples per pixel: " << (64 * samples_o.value()) << "\n";
         
+        Spinner spinner("🎨 Running CPU ray-tracing...");
         spawn_system_monitor();
         
         std::vector<std::thread> threads;
@@ -605,6 +637,7 @@ private:
         }
         
         for (auto& t : threads) t.join();
+        spinner.stop();
         
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg = total / scores.size();
@@ -639,6 +672,7 @@ private:
         const char* pattern_names[] = {"", "Gaming AI", "Database Queries", "Compiler Parsing", "Mixed Workload"};
         std::cout << "\n🎯 BRANCH PREDICTION : " << pattern_names[pattern_o.value()] << "\n\n";
         
+        Spinner spinner("🎯 Running branch prediction...");
         spawn_system_monitor();
         
         std::vector<std::thread> threads;
@@ -652,6 +686,7 @@ private:
         }
         
         for (auto& t : threads) t.join();
+        spinner.stop();
         
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg = total / scores.size();
@@ -683,6 +718,7 @@ private:
         
         std::cout << "\n🏗️ CACHE HIERARCHY TESTS\n\n";
         
+        Spinner spinner("🏗️ Running cache hierarchy tests...");
         spawn_system_monitor();
         
         std::vector<std::thread> threads;
@@ -697,6 +733,7 @@ private:
         }
         
         for (auto& t : threads) t.join();
+        spinner.stop();
         
         // Calculate averages for each test
         std::array<double, 4> totals = {0, 0, 0, 0};

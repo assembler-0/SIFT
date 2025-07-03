@@ -17,6 +17,7 @@ extern "C" {
     void diskWrite(const char * name);
     void startLZMA(int duration);
     void spawn_system_monitor();
+    void spawn_system_monitor_quiet();
     void stop_system_monitor();
     void renderPixel(int iterations, int thread_id, float* output);
     void branchTorture(unsigned long iterations, int pattern_type);
