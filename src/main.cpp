@@ -1,6 +1,5 @@
 #include "core.hpp"
 #include "pcg_random.hpp"
-#include "tui/tui.h"
 #include <iostream>
 #include <random>
 #include <string>
@@ -17,26 +16,28 @@
 #include <algorithm>
 #include <numeric>
 #include <optional>
-#include "tui/tui.h"
+
 class sift {
 public:
     void init() {
         detect_cpu_features();
-        tui_header("SIFT System Intensive Function Tester");
-        printf("Version: %s | CPU: %s\n", APP_VERSION, cpu_brand.c_str());
-        printf("Features: AVX%s | AVX2%s | AES%s | SHA%s | FMA%s\n", 
-               has_avx ? "+" : "-", has_avx2 ? "+" : "-", has_aes ? "+" : "-", 
-               has_sha ? "+" : "-", has_fma ? "+" : "-");
+        std::cout << "SIFT version " << APP_VERSION << " | CPU: " << cpu_brand << "\n";
+        std::cout << "Features: AVX" << (has_avx ? "+" : "-")
+                  << " | AVX2" << (has_avx2 ? "+" : "-")
+                  << " | AES" << (has_aes ? "+" : "-")
+                  << " | SHA" << (has_sha ? "+" : "-")
+                  << " | AVX2" << (has_avx2 ? "+" : "-")
+                  << " | FMA" << (has_fma ? "+" : "-") << "\n";
 
         while (running) {
-            printf("[SIFT] >> ");
+            std::cout << "[SIFT] >> ";
             if (!std::getline(std::cin, op_mode)) break;
 
             if (auto it = command_map.find(op_mode); it != command_map.end()) {
                 it->second();
             }
             else if (!op_mode.empty()) {
-                tui_error("Invalid command");
+                std::cout << "Invalid command\n";
             }
         }
     }
@@ -102,22 +103,22 @@ private:
     }
 
     static void showMenu() {
-        tui_header("SIFT Test Menu");
-        printf("Extreme System Stability Test\n\n");
-        printf("avx    - AVX/FMA Stress Test\n");
-        printf("3np1   - Collatz Conjecture bruteforce\n");
-        printf("primes - Prime bruteforce\n");
-        printf("mem    - Extreme memory testing\n");
-        printf("aesenc - Vector AES Encrypt stressing\n");
-        printf("aesdec - Vector AES Decrypt stressing\n");
-        printf("sha    - SHA_NI stressing\n");
-        printf("disk   - Disk stressing\n");
-        printf("lzma   - CPU compression and decompression using LZMA\n");
-        printf("render - BRUTAL CPU Ray-tracing (Cinebench killer)\n");
-        printf("branch - Branch Prediction (Real-world patterns)\n");
-        printf("gpu    - GPU stressing with HIP\n");
-        printf("full   - Combined Full System Stress\n");
-        printf("exit   - Exit Program\n\n");
+        std::cout << "\n========= SIFT =========\n"
+                  << "Extreme System Stability Test\n"
+                  << "avx   - AVX/FMA Stress Test\n"
+                  << "3np1  - Collatz Conjecture bruteforce\n"
+                  << "primes  - Prime bruteforce\n"
+                  << "mem   - Extreme memory testing\n"
+                  << "aesenc   - Vector AES Encrypt stressing\n"
+                  << "aesdec   - Vector AES Decrypt stressing\n"
+                  << "sha   - SHA_NI stressing\n"
+                  << "disk   - Disk stressing\n"
+                  << "lzma   - CPU compression and decompression using LZMA\n"
+                  << "render - BRUTAL CPU Ray-tracing (Cinebench killer)\n"
+                  << "branch - Branch Prediction (Real-world patterns)\n"
+                  << "gpu   - GPU stressing with HIP\n"
+                  << "full  - Combined Full System Stress\n"
+                  << "exit  - Exit Program\n\n";
     }
     std::string formatIPS(double flops) const {
         if (flops >= 1e9) {
@@ -134,7 +135,7 @@ private:
 
     static void initLZMA (std::optional<int> duration_o = std::nullopt){
         if (!duration_o.has_value()) {
-            printf("Duration (s)?: ");
+            std::cout << "Duration (s)?: ";
             if (!(std::cin >> duration_o.emplace())) return;
         }
         spawn_system_monitor();
@@ -146,7 +147,7 @@ private:
 
     void init3np1(std::optional<unsigned long> iterations_o = std::nullopt, std::optional<unsigned long> lower_o = std::nullopt, std::optional<unsigned long> upper_o = std::nullopt) const {
         if (!iterations_o.has_value()) {
-            tui_info("Iterations?: ");
+            std::cout << "Iterations?: ";
             if (!(std::cin >> iterations_o.emplace())) return;
         }
         if (!lower_o.has_value()) {
@@ -166,30 +167,27 @@ private:
         threads.reserve(num_threads);
         std::vector<double> scores(num_threads);
 
-        tui_info("Starting 3n+1 Collatz stress test...");
-        
         for (int i = 0; i < num_threads; ++i) {
             threads.emplace_back([=, &scores]() {
                 scores[i] = collatzWorker(iterations, lower, upper, i);
             });
         }
         for (auto& t : threads) t.join();
-        
-        tui_success("3n+1 Collatz stress test completed");
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
         const double avg   = total / scores.size();
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
 
-        tui_header("3n+1 STRESS SCORE");
+        std::cout << "\n====== 3n+1 STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
-            printf("Thread %zu: %s\n", i, formatIPS(scores[i]).c_str());
+            std::cout << "Thread " << i << ": "
+                      << formatIPS(scores[i]) << "\n";
         }
-        printf("-------------------------------\n");
-        printf("Avg:    %s\n", formatIPS(avg).c_str());
-        printf("Median: %s\n", formatIPS(median).c_str());
-        printf("================================\n");
+        std::cout << "-------------------------------\n";
+        std::cout << "Avg:    " << formatIPS(avg) << "\n";
+        std::cout << "Median: " << formatIPS(median) << "\n";
+        std::cout << "================================\n";
         stop_system_monitor();
 
     }
@@ -290,14 +288,14 @@ private:
 
     void initMem(std::optional<unsigned long> user_iterations = std::nullopt) const {
         char status;
-        tui_warning("THIS TEST CONTAINS ROWHAMMER ATTACK, PROCEED? (yY/nN): ");
+        std::cout << "ONE TIME WARNING, THIS TEST CONTAINS ROWHAMMER ATTACK, PROCEED? (yY/nN): ";
         std::cin >> status;
         switch (status) {
         case 'y': case 'Y': break;
         default: return;
         }
         if (!user_iterations.has_value()) {
-            printf("Iterations?: ");
+            std::cout << "Iterations?: ";
             if (!(std::cin >> user_iterations.emplace())) return;
         }
         if (user_iterations.value() == 0) return;
