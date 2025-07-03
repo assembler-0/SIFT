@@ -1,5 +1,6 @@
 #include "core.hpp"
 #include "pcg_random.hpp"
+#include "logger.hpp"
 #include <iostream>
 #include <random>
 #include <string>
@@ -21,6 +22,10 @@ class sift {
 public:
     void init() {
         detect_cpu_features();
+        
+        // Log session start
+        Logger::getInstance().logSystemInfo(cpu_brand, has_avx, has_avx2, has_fma, has_aes, has_sha);
+        
         std::cout << "SIFT version " << APP_VERSION << " | CPU: " << cpu_brand << "\n";
         std::cout << "Features: AVX" << (has_avx ? "+" : "-")
                   << " | AVX2" << (has_avx2 ? "+" : "-")
@@ -67,7 +72,9 @@ private:
         {"aesenc", [this]() { initAESENC(); }},
         {"aesdec", [this]() { initAESDEC(); }},
         {"render", [this]() { initRender(); }},
-        {"branch", [this]() { initBranch(); }}
+        {"branch", [this]() { initBranch(); }},
+        {"cache", [this]() { initCache(); }},
+        {"rec", [this]() { showRecommendations(); }}
     };
 
     void detect_cpu_features() {
@@ -116,6 +123,8 @@ private:
                   << "lzma   - CPU compression and decompression using LZMA\n"
                   << "render - BRUTAL CPU Ray-tracing (Cinebench killer)\n"
                   << "branch - Branch Prediction (Real-world patterns)\n"
+                  << "cache  - Cache Hierarchy Tests (L1/L2/L3/Latency)\n"
+                  << "rec    - Show Recommended Iterations for Accurate Results\n"
                   << "gpu   - GPU stressing with HIP\n"
                   << "full  - Combined Full System Stress\n"
                   << "exit  - Exit Program\n\n";
@@ -179,6 +188,9 @@ private:
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("3n+1_Collatz", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== 3n+1 STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -226,6 +238,9 @@ private:
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("Primes_Stress", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== PRIMES STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -272,6 +287,9 @@ private:
         std::sort(scores.begin(), scores.end());
         double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("AVX_Stress", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== AVX STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -316,6 +334,9 @@ private:
         std::sort(scores.begin(), scores.end());
         const double median = scores[scores.size() / 2];
 
+        // Log results
+        Logger::getInstance().logTestResult("Memory_Stress", scores, avg, median, cpu_brand);
+        
         std::cout << "\n====== MEM STRESS SCORE ======\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": "
@@ -567,6 +588,11 @@ private:
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
         
+        // Log results
+        const char* pattern_names_log[] = {"", "Gaming_AI", "Database_Queries", "Compiler_Parsing", "Mixed_Workload"};
+        std::string test_name = "Branch_" + std::string(pattern_names_log[pattern_o.value()]);
+        Logger::getInstance().logTestResult(test_name, scores, avg, median, cpu_brand);
+        
         std::cout << "\n==== BRANCH PREDICTION SCORE ====\n";
         for (size_t i = 0; i < scores.size(); ++i) {
             std::cout << "Thread " << i << ": " << formatIPS(scores[i]) << "\n";
@@ -579,8 +605,98 @@ private:
         stop_system_monitor();
     }
 
+    void initCache(std::optional<unsigned long> iterations_o = std::nullopt) {
+        if (!iterations_o.has_value()) {
+            std::cout << "Iterations?: ";
+            if (!(std::cin >> iterations_o.emplace())) return;
+        }
+        
+        std::cout << "\n🏗️ CACHE HIERARCHY TESTS\n\n";
+        
+        spawn_system_monitor();
+        
+        std::vector<std::thread> threads;
+        threads.reserve(num_threads);
+        std::vector<std::array<double, 4>> scores(num_threads); // L1, L2, L3, Latency
+        
+        for (unsigned i = 0; i < num_threads; ++i) {
+            threads.emplace_back([=, &scores]() {
+                auto result = cacheWorker(iterations_o.value(), i);
+                scores[i] = result;
+            });
+        }
+        
+        for (auto& t : threads) t.join();
+        
+        // Calculate averages for each test
+        std::array<double, 4> totals = {0, 0, 0, 0};
+        for (const auto& score : scores) {
+            for (int i = 0; i < 4; ++i) {
+                totals[i] += score[i];
+            }
+        }
+        
+        const char* test_names[] = {"L1 Cache", "L2 Cache", "L3 Cache", "Memory Latency"};
+        
+        // Log cache results
+        Logger::getInstance().logCacheResult(scores, cpu_brand);
+        
+        std::cout << "\n===== CACHE HIERARCHY SCORES =====\n";
+        for (int test = 0; test < 4; ++test) {
+            std::cout << test_names[test] << ":\n";
+            for (size_t i = 0; i < scores.size(); ++i) {
+                std::cout << "  Thread " << i << ": " << formatIPS(scores[i][test]) << "\n";
+            }
+            std::cout << "  Average: " << formatIPS(totals[test] / scores.size()) << "\n\n";
+        }
+        std::cout << "===================================\n";
+        
+        stop_system_monitor();
+    }
+
+    static void showRecommendations() {
+        std::cout << "\n======= RECOMMENDED ITERATIONS =======\n";
+        std::cout << "For accurate and consistent results:\n\n";
+        
+        std::cout << "🔥 TESTS (Maximum CPU Stress):\n";
+        std::cout << "  avx     : 200,000 iterations\n";
+        std::cout << "  render  : Resolution 3 (4K), 5 samples\n";
+        std::cout << "  mem     : 20 iterations\n";
+        std::cout << "\n";
+        
+        std::cout << "🎮 REAL-WORLD TESTS (Application Performance):\n";
+        std::cout << "  branch  : 5,000,000,000 iterations\n";
+        std::cout << "  3np1    : 20,000,000 iterations\n";
+        std::cout << "  primes  : 3 iterations\n";
+        std::cout << "  cache   : 5,000 iterations\n";
+        std::cout << "\n";
+        
+        std::cout << "🛡️ SECURITY TESTS (Crypto Performance):\n";
+        std::cout << "  aesenc  : 20 iterations, blocksize 24\n";
+        std::cout << "  aesdec  : 20 iterations, blocksize 24\n";
+        std::cout << "  sha     : 100,000,000 iterations\n";
+        std::cout << "\n";
+        
+        std::cout << "💾 I/O TESTS (System Integration):\n";
+        std::cout << "  disk    : 20 iterations\n";
+        std::cout << "  lzma    : 60 seconds\n";
+        std::cout << "\n";
+        
+        std::cout << "⚡ BOUNDS (for tests that need them):\n";
+        std::cout << "  AVX     : Lower 0.0001, Upper 1000000000000000\n";
+        std::cout << "  3n+1    : Lower 1, Upper 1000000000000000\n";
+        std::cout << "  Primes  : Lower 1, Upper 1000000000000000\n";
+        std::cout << "\n";
+        
+        std::cout << "💡 NOTES:\n";
+        std::cout << "  - These values provide ~30-60 second test duration\n";
+        std::cout << "  - Adjust based on your CPU speed if needed\n";
+        std::cout << "  - Use 'full' command with intensity 1 for all tests\n";
+        std::cout << "=======================================\n\n";
+    }
+
     void nuclearOption() {
-        unsigned long intensity = 0;
+        unsigned long intensity = 1;
         std::cout << "Intensity (1 = default): ";
         std::cin >> intensity;
         std::cout << "Launching full stress test...\n";
@@ -595,6 +711,7 @@ private:
         unsigned long nuke_resolution_render = 3;
         unsigned long nuke_samples_render = 5 * intensity;
         unsigned long nuke_iterations_branch = 5000000000 * intensity;
+        unsigned long nuke_iterations_cache = 5000 * intensity;
         constexpr unsigned long lower_avx = 0.0001, upper_avx = 1000000000000000;
         constexpr unsigned long lower = 1, upper = 1000000000000000;
         constexpr int block_size = 24;
@@ -614,6 +731,7 @@ private:
         initBranch(nuke_iterations_branch, 2);
         initBranch(nuke_iterations_branch, 3);
         initBranch(nuke_iterations_branch, 4);
+        initCache(nuke_iterations_cache);
         const auto duration = std::chrono::high_resolution_clock::now() - start;
         std::cout << "Full test complete! Time: "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
@@ -872,6 +990,59 @@ private:
         const auto end = std::chrono::high_resolution_clock::now();
         const std::chrono::duration<double> elapsed = end - start;
         return iterations / elapsed.count();
+    }
+
+    static std::array<double, 4> cacheWorker(unsigned long iterations, int tid) {
+        pinThread(tid);
+        
+        // Allocate buffers for different cache levels
+        constexpr size_t L1_SIZE = 32 * 1024;      // 32KB
+        constexpr size_t L2_SIZE = 512 * 1024;     // 512KB  
+        constexpr size_t L3_SIZE = 8 * 1024 * 1024; // 8MB
+        constexpr size_t MEM_SIZE = 64 * 1024 * 1024; // 64MB
+        
+        void* l1_buffer = aligned_alloc(64, L1_SIZE);
+        void* l2_buffer = aligned_alloc(64, L2_SIZE);
+        void* l3_buffer = aligned_alloc(64, L3_SIZE);
+        void* mem_buffer = aligned_alloc(64, MEM_SIZE);
+        
+        std::array<double, 4> results;
+        
+        // L1 Cache Test
+        auto start = std::chrono::high_resolution_clock::now();
+        cacheL1Test(iterations, l1_buffer);
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration<double>(end - start);
+        results[0] = iterations / elapsed.count();
+        
+        // L2 Cache Test
+        start = std::chrono::high_resolution_clock::now();
+        cacheL2Test(iterations, l2_buffer);
+        end = std::chrono::high_resolution_clock::now();
+        elapsed = std::chrono::duration<double>(end - start);
+        results[1] = iterations / elapsed.count();
+        
+        // L3 Cache Test
+        start = std::chrono::high_resolution_clock::now();
+        cacheL3Test(iterations, l3_buffer);
+        end = std::chrono::high_resolution_clock::now();
+        elapsed = std::chrono::duration<double>(end - start);
+        results[2] = iterations / elapsed.count();
+        
+        // Memory Latency Test
+        start = std::chrono::high_resolution_clock::now();
+        memoryLatencyTest(iterations, mem_buffer, MEM_SIZE);
+        end = std::chrono::high_resolution_clock::now();
+        elapsed = std::chrono::duration<double>(end - start);
+        results[3] = iterations / elapsed.count();
+        
+        // Cleanup
+        free(l1_buffer);
+        free(l2_buffer);
+        free(l3_buffer);
+        free(mem_buffer);
+        
+        return results;
     }
 };
 
