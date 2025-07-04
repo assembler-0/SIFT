@@ -9,7 +9,6 @@ class MenuSystem {
 public:
     static void showMainMenu(const std::string& cpu_brand, bool has_avx, bool has_avx2, 
                            bool has_fma, bool has_aes, bool has_sha) {
-        clearScreen();
         drawBox();
         
         std::cout << "│ " << centerText("SIFT v0.9.0 - System Intensive Function Tester", 46) << " │\n";
@@ -95,13 +94,6 @@ public:
     }
     
 private:
-    static void clearScreen() {
-        #ifdef _WIN32
-            system("cls");
-        #else
-            system("clear");
-        #endif
-    }
     
     static void drawBox() {
         std::cout << "┌" << std::string(48, '-') << "┐\n";
