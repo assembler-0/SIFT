@@ -38,8 +38,6 @@ sources = [
     './asm/render.asm',
     './asm/sha256.asm',
     './include/imgui/backends/imgui_impl_glfw.cpp',
-    './include/imgui/backends/imgui_impl_glut.cpp',
-    './include/imgui/backends/imgui_impl_opengl2.cpp',
     './include/imgui/backends/imgui_impl_opengl3.cpp',
     './include/imgui/imgui.cpp',
     './include/imgui/imgui_draw.cpp',
