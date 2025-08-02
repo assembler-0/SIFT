@@ -1,0 +1,50 @@
+# CONFIGURATION FILE 'autocc.toml' IS WRITTEN BY AUTOCC ON 11:22:23 Aug  1 2025, EDIT WITH CAUTION.
+[compilers]
+as = 'nasm'
+cc = 'clang'
+cxx = 'clang++'
+
+[features]
+use_pch = true
+
+[paths]
+exclude_patterns = []
+include_dirs = [ 'include/imgui/backends', 'include/imgui', 'include', '.' ]
+
+[project]
+build_dir = '.autocc_build'
+default_target = 'sift'
+
+[[targets]]
+cflags = ''
+cxxflags = '-O3 -std=c++23 -march=native'
+exclude_patterns = []
+external_libs = [ '-ldl', '-lglfw', '-lm', '-lglut', '-lGL', '-lpthread', '-lz', '-llzma' ]
+ldflags = ''
+main_file = './src/main.cpp'
+name = 'sift'
+output_name = 'sift'
+sources = [
+    './src/main.cpp',
+    './asm/3np1.asm',
+    './asm/aesDEC.asm',
+    './asm/aesENC.asm',
+    './asm/avx.asm',
+    './asm/branch.asm',
+    './asm/cache.asm',
+    './asm/diskWrite.asm',
+    './asm/flood.asm',
+    './asm/primes.asm',
+    './asm/render.asm',
+    './asm/sha256.asm',
+    './include/imgui/backends/imgui_impl_glfw.cpp',
+    './include/imgui/backends/imgui_impl_glut.cpp',
+    './include/imgui/backends/imgui_impl_opengl2.cpp',
+    './include/imgui/backends/imgui_impl_opengl3.cpp',
+    './include/imgui/imgui.cpp',
+    './include/imgui/imgui_draw.cpp',
+    './include/imgui/imgui_tables.cpp',
+    './include/imgui/imgui_widgets.cpp',
+    './src/lzma.module.cpp',
+    './src/systemMonitor.manage.cpp',
+]

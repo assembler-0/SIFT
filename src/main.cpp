@@ -12,11 +12,9 @@
 #include <thread>
 #include <chrono>
 #include <vector>
-#include <immintrin.h>
 #include <cpuid.h>
 #include <sched.h>
 #include <sys/mman.h>
-#include <iomanip>
 #include <algorithm>
 #include <numeric>
 #include <optional>
@@ -29,9 +27,8 @@ public:
         
         while (running) {
             MenuSystem::showMainMenu(cpu_brand, has_avx, has_avx2, has_fma, has_aes, has_sha);
-            char choice = MenuSystem::getMenuChoice();
-            
-            switch (choice) {
+
+            switch (MenuSystem::getMenuChoice()) {
                 case '1': initAvx(); break;
                 case '2': initRender(); break;
                 case '3': initMem(); break;
@@ -192,7 +189,7 @@ private:
                   << "full  - Combined Full System Stress\n"
                   << "exit  - Exit Program\n\n";
     }
-    std::string formatIPS(double flops) const {
+    static std::string formatIPS(const double flops) {
         if (flops >= 1e9) {
             return std::to_string(flops / 1e9) + " GIPS";
         }
@@ -252,7 +249,7 @@ private:
         spinner.stop();
 
         const double total = std::accumulate(scores.begin(), scores.end(), 0.0);
-        const double avg   = total / scores.size();
+        const double avg   = total / static_cast<double>(scores.size());
         std::ranges::sort(scores);
         const double median = scores[scores.size() / 2];
 
@@ -1070,10 +1067,10 @@ private:
         }
         
         // Calculate pixels per thread
-        int total_pixels = width * height;
-        int pixels_per_thread = total_pixels / std::thread::hardware_concurrency();
-        int start_pixel = tid * pixels_per_thread;
-        int end_pixel = (tid == std::thread::hardware_concurrency() - 1) ? 
+        const int total_pixels = width * height;
+        const int pixels_per_thread = total_pixels / std::thread::hardware_concurrency();
+        const int start_pixel = tid * pixels_per_thread;
+        const int end_pixel = (tid == std::thread::hardware_concurrency() - 1) ?
                        total_pixels : start_pixel + pixels_per_thread;
         
         alignas(16) float pixel_output;
@@ -1113,7 +1110,7 @@ private:
         void* l3_buffer = aligned_alloc(64, L3_SIZE);
         void* mem_buffer = aligned_alloc(64, MEM_SIZE);
         
-        std::array<double, 4> results;
+        std::array<double, 4> results{};
         
         // L1 Cache Test
         auto start = std::chrono::high_resolution_clock::now();
@@ -1153,7 +1150,7 @@ private:
     }
     template<typename T>
     T getConfigValue(const std::unordered_map<std::string, std::string>& config, const std::string& key, T default_value) {
-        auto it = config.find(key);
+        const auto it = config.find(key);
         if (it == config.end()) return default_value;
         
         std::stringstream ss(it->second);
@@ -1163,7 +1160,7 @@ private:
     }
 };
 
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
     if (argc == 2) {
         // Config file mode
         std::string config_file = argv[1];
